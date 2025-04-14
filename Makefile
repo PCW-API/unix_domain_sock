@@ -25,7 +25,7 @@ GTEST_CFLAGS = -Wall -g -I$(INCLUDE_DIR) -I$(GTEST_INCLUDE_DIR) -std=c++11
 GTEST_LDFLAGS = -L$(GTEST_LIB_DIR) -lgtest -lgtest_main -lpthread
 
 # 타겟 라이브러리
-TARGET_LIB = libtcpsock.so
+TARGET_LIB = libuds.so
 
 # 기본 타겟
 all: $(TARGET_LIB) #$(TCP_SERVER) $(TCP_CLIENT)
