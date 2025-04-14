@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "string_view": "c",
+        "system_error": "c",
+        "chrono": "cpp",
+        "un.h": "c"
+    }
+}
