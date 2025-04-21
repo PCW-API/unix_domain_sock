@@ -25,7 +25,7 @@ protected:
         memset(recv_buffer, 0, sizeof(recv_buffer));
 
         // 서버 소켓 리스닝 준비
-        listen_sock = createUdsServerSocket(TEST_SOCKET_PATH);
+        listen_sock = createUdsServerSocket(TEST_SOCKET_PATH, 1);
         ASSERT_GT(listen_sock, 0);
 
         // 클라이언트 연결을 수락하는 서버 쓰레드
@@ -47,9 +47,9 @@ protected:
      * @brief 테스트 종료 함수
      */
     void TearDown() override {
-        uds_close(client_sock);
-        uds_close(server_sock);
-        uds_close(listen_sock);
+        udsClose(client_sock);
+        udsClose(server_sock);
+        udsClose(listen_sock);
         unlink(TEST_SOCKET_PATH);
     }
 };
@@ -103,7 +103,7 @@ TEST_F(UDSTest, TimeoutReceiveTest_WithData) {
  * @brief 클라이언트 종료 후 서버에서 recv() 결과 확인
  */
 TEST_F(UDSTest, ReceiveAfterClientClose) {
-    uds_close(client_sock);
+    udsClose(client_sock);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     int received = udsRecvMsg(server_sock, recv_buffer, sizeof(recv_buffer));
@@ -124,7 +124,7 @@ TEST(UdsMultiClientTest, MultiClientCommunicationWithAccept) {
     char buffer[BUFFER_SIZE] = {0};
 
     // 서버 생성 (accept 포함 X)
-    int server_fd = createUdsServerSocket(TEST_SOCKET_PATH);
+    int server_fd = createUdsServerSocket(TEST_SOCKET_PATH, CLIENT_COUNT);
     ASSERT_GT(server_fd, 0);
 
     // 클라이언트 생성 및 메시지 전송 쓰레드
@@ -136,7 +136,7 @@ TEST(UdsMultiClientTest, MultiClientCommunicationWithAccept) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50 * (rand() % 3)));
             int sock = createUdsClientSocket(TEST_SOCKET_PATH);
             udsSendMsg(sock, msg.c_str(), msg.length());
-            uds_close(sock);
+            udsClose(sock);
         });
     }
 
@@ -155,8 +155,9 @@ TEST(UdsMultiClientTest, MultiClientCommunicationWithAccept) {
     }
 
     // 자원 정리
-    for (int s : accepted_socks) uds_close(s);
-    uds_close(server_fd);
+    for (int s : accepted_socks) 
+        udsClose(s);
+    udsClose(server_fd);
     unlink(TEST_SOCKET_PATH);
 
     for (auto &t : client_threads) {
