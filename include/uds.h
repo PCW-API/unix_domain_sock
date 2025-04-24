@@ -1,12 +1,12 @@
 #ifndef UDS_H
 #define UDS_H
 
-#include <stddef.h>
-#include <arpa/inet.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stddef.h>
+#include <arpa/inet.h>
 
 /**
  * @brief Unix 도메인 소켓 서버를 생성 및 클라이언트 연결 대기
