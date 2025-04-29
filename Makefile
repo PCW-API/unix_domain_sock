@@ -9,6 +9,8 @@ CFLAGS = -Wall -g -fPIC -I$(INCLUDE_DIR)
 DESKTOP_TARGET_LIB = libuds_desktop.so
 DESKTOP_CFLAGS = -Wall -g -fPIC -I$(INCLUDE_DIR)
 DESKTOP_CC = gcc
+INSTALL_INCLUDE_DIR = /usr/include
+INSTALL_LIB_DIR = /usr/lib
 
 # 구글테스트 관련 설정
 GTEST_DIR = ../googletest
@@ -48,7 +50,10 @@ symlinks:
 
 # desktop 타겟
 desktop: $(SOCKET_SRCS)
-	$(DESKTOP_CC) -shared $(DESKTOP_CFLAGS) -o $(DESKTOP_TARGET_LIB) $(SOCKET_SRCS)
+	$(DESKTOP_CC) -shared $(DESKTOP_CFLAGS) -o $(DESKTOP_TARGET_LIB) $(SOCKET_SRCS) \
+	&& echo "Copying libraries and headers to /usr/lib and /usr/include..." \
+	&& sudo cp -v lib*.so $(INSTALL_LIB_DIR) \
+	&& sudo cp -v include/*.h $(INSTALL_INCLUDE_DIR)
 
 # 구글테스트 빌드 및 실행
 gtest: $(MY_GTEST_OBJS) $(FOR_GTEST_OBJS)

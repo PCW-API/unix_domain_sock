@@ -8,6 +8,9 @@ extern "C" {
 #include <stddef.h>
 #include <arpa/inet.h>
 
+#define UDS_TIME_OUT            -2
+#define UDS_DISCONNECTION       0
+
 /**
  * @brief Unix 도메인 소켓 서버를 생성 및 클라이언트 연결 대기
  *

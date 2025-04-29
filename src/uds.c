@@ -104,7 +104,7 @@ int udsRecvMsgTimeout(int iSock, char *pchData, size_t iLength, int iTimeoutMsec
         return -1;
     } else if (ret == 0) {
         fprintf(stderr, "Timeout: no data received within %d seconds.\n", iTimeoutMsec);
-        return 0;  // timeout
+        return UDS_TIME_OUT;  // timeout
     }
 
     ssize_t received = recv(iSock, pchData, iLength, 0);
