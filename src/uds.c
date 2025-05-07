@@ -10,7 +10,7 @@
 #include <sys/select.h>
 // #include <fcntl.h>
 
-int createUdsServerSocket(const char *pchSocketPath) {
+int createUdsServerSocket(const char *pchSocketPath, int iMaxClients) {
     int iServerFd;
     struct sockaddr_un address;
     
@@ -26,14 +26,29 @@ int createUdsServerSocket(const char *pchSocketPath) {
 
     if (bind(iServerFd, (struct sockaddr *)&address, sizeof(address)) == -1) {
         perror("Bind failed");
+        close(iServerFd);
         exit(EXIT_FAILURE);
     }
 
-    if (listen(iServerFd, 3) == -1) {
+    if (listen(iServerFd, iMaxClients) == -1) {
         perror("Listen failed");
+        close(iServerFd);
         exit(EXIT_FAILURE);
     }
     return iServerFd;
+}
+
+int acceptUdsClient(int iServerFd) 
+{
+    int iClientSockFd;
+    struct sockaddr_un stClientSockAddr;
+    socklen_t uiClientAddrLen = sizeof(struct sockaddr_un);
+
+    if ((iClientSockFd = accept(iServerFd, (struct sockaddr *)&stClientSockAddr, &uiClientAddrLen)) == -1) {
+        perror("Accept failed");
+    }
+
+    return iClientSockFd;
 }
 
 int createUdsClientSocket(const char *pchSocketPath) {
@@ -51,9 +66,16 @@ int createUdsClientSocket(const char *pchSocketPath) {
 
     if (connect(iSock, (struct sockaddr *)&address, sizeof(address)) == -1) {
         perror("Connection failed");
+        close(iSock);
         exit(EXIT_FAILURE);
     }
     return iSock;
+}
+
+void handleUdsClientDisconnection(int iClientSockFd) 
+{
+    fprintf(stderr,"%d client connection was terminated.\n", iClientSockFd);
+    close(iClientSockFd);    
 }
 
 int udsSendMsg(int iSock, const char *pchData, size_t iLength) {
@@ -82,7 +104,7 @@ int udsRecvMsgTimeout(int iSock, char *pchData, size_t iLength, int iTimeoutMsec
         return -1;
     } else if (ret == 0) {
         fprintf(stderr, "Timeout: no data received within %d seconds.\n", iTimeoutMsec);
-        return 0;  // timeout
+        return UDS_TIME_OUT;  // timeout
     }
 
     ssize_t received = recv(iSock, pchData, iLength, 0);
@@ -93,6 +115,6 @@ int udsRecvMsgTimeout(int iSock, char *pchData, size_t iLength, int iTimeoutMsec
 
     return (int)received;
 }
-void uds_close(int iSock) {
+void udsClose(int iSock) {
     close(iSock);
 }

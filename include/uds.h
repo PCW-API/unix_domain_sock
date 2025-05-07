@@ -1,15 +1,23 @@
 #ifndef UDS_H
 #define UDS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <arpa/inet.h>
+
+#define UDS_TIME_OUT            -2
+#define UDS_DISCONNECTION       0
+
 /**
  * @brief Unix 도메인 소켓 서버를 생성 및 클라이언트 연결 대기
  *
  * @param pchSocketPath Unix 도메인 소켓 파일 경로.
  * @return 연결된 클라이언트 소켓 디스크립터.
  */
-int createUdsServerSocket(const char *pchSocketPath);
+int createUdsServerSocket(const char *pchSocketPath, int iMaxClients);
 
 /**
  * @brief Unix 도메인 소켓 서버에 연결
@@ -18,6 +26,13 @@ int createUdsServerSocket(const char *pchSocketPath);
  * @return 연결된 소켓 디스크립터.
  */
 int createUdsClientSocket(const char *pchSocketPath);
+
+/**
+ * @brief Unix 도메인 소켓을 클라이언트 접속 종료 
+ *
+ * @param iClientSockFd 클라이언트 소켓 디스크립터.
+ */
+void handleUdsClientDisconnection(int iClientSockFd);
 
 /**
  * @brief Unix 도메인 소켓을 통해 메시지를 전송
@@ -55,6 +70,13 @@ int udsRecvMsgTimeout(int iSock, char *pchData, size_t iLength, int iTimeoutMsec
  *
  * @param iSock 종료할 소켓 디스크립터.
  */
-void uds_close(int iSock);
+void udsClose(int iSock);
+
+
+int acceptUdsClient(int iServerFd) ;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
