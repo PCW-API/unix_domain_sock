@@ -44,7 +44,7 @@ void* recvThread(void* arg)
                     chBuffer[iRecvSize] = '\0';
                     for (int j = 0; j < pstUdsServer->iMaxClients; ++j) {
                         if (pstUdsServer->pstClients[i].iSock == iClientFd) {
-                            enqueue(&(pstUdsServer->pstClients[i].stRecvQueue), strdup(chBuffer));                            
+                            queuePush(&(pstUdsServer->pstClients[i].stRecvQueue), strdup(chBuffer), iRecvSize);                            
                         }
                     }
                 }
