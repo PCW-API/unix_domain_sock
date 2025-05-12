@@ -1,6 +1,10 @@
 #ifndef UDS_SERVER_H
 #define UDS_SERVER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <pthread.h>
 #include "queue.h"
 
@@ -27,4 +31,9 @@ typedef struct {
 
 void* recvThread(void* arg);
 void* send_thread(void* arg);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
