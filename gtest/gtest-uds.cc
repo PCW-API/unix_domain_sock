@@ -75,7 +75,7 @@ TEST_F(UDSTest, SendReceiveTest) {
  */
 TEST_F(UDSTest, TimeoutReceiveTest_NoData) {
     int ret = udsRecvMsgTimeout(server_sock, recv_buffer, sizeof(recv_buffer), 500); // 500ms
-    ASSERT_EQ(ret, 0) << "타임아웃이 발생하지 않았습니다.";
+    ASSERT_EQ(ret, UDS_TIME_OUT) << "타임아웃이 발생하지 않았습니다.";
 }
 
 /**
@@ -133,9 +133,11 @@ TEST(UdsMultiClientTest, MultiClientCommunicationWithAccept) {
         expected_messages.push_back(msg);
 
         client_threads.emplace_back([msg]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50 * (rand() % 3)));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             int sock = createUdsClientSocket(TEST_SOCKET_PATH);
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             udsSendMsg(sock, msg.c_str(), msg.length());
+            std::cout<<"client msg : "<<msg<<"\n";
             udsClose(sock);
         });
     }
@@ -148,6 +150,7 @@ TEST(UdsMultiClientTest, MultiClientCommunicationWithAccept) {
 
         memset(buffer, 0, sizeof(buffer));
         int len = udsRecvMsg(client_sock, buffer, sizeof(buffer) - 1);
+        fprintf(stderr,"server recv msg : %s\n", buffer);
         ASSERT_GT(len, 0);
 
         buffer[len] = '\0';

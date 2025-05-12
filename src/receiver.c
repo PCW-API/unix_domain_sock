@@ -1,5 +1,6 @@
 // recv_handler.c
 #include "uds-server.h"
+#include "uds.h"
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>

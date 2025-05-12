@@ -22,13 +22,13 @@ FOR_GTEST_OBJS = $(patsubst %.c, %_gtest.o, $(FOR_GTEST_SRCS))
 MY_GTEST_DIR = gtest
 MY_GTEST_SRCS = $(MY_GTEST_DIR)/gtest-uds.cc
 MY_GTEST_OBJS = $(patsubst %.cc, %.o, $(MY_GTEST_SRCS))
-GTEST_TARGET = gtest-uds
+GTEST_TARGET = uds-gtest
 
 # 변수 정의
 CC = gcc
 CXX = g++
 GTEST_CFLAGS = -Wall -g -I$(INCLUDE_DIR) -I$(GTEST_INCLUDE_DIR) -std=c++11
-GTEST_LDFLAGS = -L$(GTEST_LIB_DIR) -lgtest -lgtest_main -lpthread
+GTEST_LDFLAGS = -L$(GTEST_LIB_DIR) -lgtest -lgtest_main -lpthread -lqueue_desktop
 
 # 라이브러리 파일명
 TARGET_LIB = libuds.so.1.0.0

@@ -1,9 +1,11 @@
 // send_handler.c
 #include "uds-server.h"
+#include "uds.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <queue.h>
 
 void* send_thread(void* arg) 
 {
@@ -15,7 +17,7 @@ void* send_thread(void* arg)
                 if(!queueIsEmpty(&(pstUdsServer->pstClients[i].stSendQueue))){
                     void* pvData = 0;
                     iSendSize = queuePop(&(pstUdsServer->pstClients[i].stSendQueue), &pvData);
-                    udsSendMsg(pstUdsServer->pstClients[i].iSock, pvData, iSendSize);
+                    udsSendMsg(pstUdsServer->pstClients[i].iSock, (char*)pvData, iSendSize);
                     free(pvData);
                 }
             }

@@ -1,5 +1,6 @@
 // connection_manager.c
 #include "uds-server.h"
+#include "uds.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
