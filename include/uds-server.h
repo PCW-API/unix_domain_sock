@@ -25,12 +25,12 @@ typedef struct {
     int iRunning;
     int iMaxClients;
     CLIENT *pstClients;
-    pthread_t threadId;
     pthread_mutex_t clientLock;
 } UDS_SERVER;
 
+void* connectionManagerThread(void* arg);
 void* recvThread(void* arg);
-void* send_thread(void* arg);
+void* sendThread(void* arg);
 
 #ifdef __cplusplus
 }

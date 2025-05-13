@@ -20,7 +20,7 @@ GTEST_LIB_DIR = $(GTEST_DIR)/build/lib
 FOR_GTEST_SRCS = $(wildcard $(SRC_DIR)/*.c)
 FOR_GTEST_OBJS = $(patsubst %.c, %_gtest.o, $(FOR_GTEST_SRCS))
 MY_GTEST_DIR = gtest
-MY_GTEST_SRCS = $(MY_GTEST_DIR)/gtest-uds.cc
+MY_GTEST_SRCS = $(MY_GTEST_DIR)/uds-gtest.cc
 MY_GTEST_OBJS = $(patsubst %.cc, %.o, $(MY_GTEST_SRCS))
 GTEST_TARGET = uds-gtest
 

@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <queue.h>
 
-void* send_thread(void* arg) 
+void* sendThread(void* arg) 
 {
     UDS_SERVER* pstUdsServer = (UDS_SERVER *)arg;
     int iSendSize;
