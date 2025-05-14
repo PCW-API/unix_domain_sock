@@ -1,7 +1,10 @@
-# Unix Domain Socket (UDS) Communication Library
+# Unix Domain Socket Server Library (UDS Server)
 
-이 라이브러리는 **UNIX 도메인 소켓 (UDS)** 을 기반으로 하는 로컬 프로세스 간 통신 기능을 제공합니다.  
-서버/클라이언트 구조의 소켓 통신을 쉽게 구현할 수 있도록 여러 유틸리티 함수들이 포함되어 있습니다.
+UDS(Unix Domain Socket)를 기반으로 한 **멀티 클라이언트 서버 라이브러리**입니다.  
+
+다중 클라이언트 연결, 송수신 처리, 스레드 기반 동작, 큐 버퍼 등을 포함하며  Google Test 기반 테스트 환경도 제공됩니다.
+
+
 
 ---
 
@@ -10,117 +13,94 @@
 ## 파일 구성
 
 ```
-.
-├── uds.c            # UDS 함수 구현
-├── uds.h            # UDS 함수 헤더
-├── gtest-uds.cc     # GoogleTest 기반 단위 테스트
-├── Makefile         # 빌드용 Makefile (옵션)
-└── README.md        # 이 문서
+include/
+├── uds.h 					# UDS API 및 클라이언트/서버 구조 정의
+├── uds-server.h 			# 서버 동작 정의 및 스레드 함수 선언
+src/
+├── uds.c 					# UDS 서버 소켓 및 클라이언트 생성 로직
+├── connection-manager.c 	# 클라이언트 연결 관리 스레드
+├── receiver.c 				# 클라이언트 수신 처리 스레드
+├── sender.c 				# 클라이언트 송신 처리 스레드
+gtest/
+├── uds-gtest.cc 			# Google Test 기반 자동화 테스트 코드
+Makefile 					# 라이브러리 및 테스트 빌드용 Makefile
 ```
 
 ---
 
 
 
-## 제공 함수
-
-| 함수                                               | 설명                                  |
-| -------------------------------------------------- | ------------------------------------- |
-| `createUdsServerSocket(path)`                      | UDS 서버 소켓 생성 및 리스닝          |
-| `createUdsClientSocket(path)`                      | UDS 클라이언트 소켓 생성 및 서버 연결 |
-| `udsSendMsg(sock, data, len)`                      | 데이터 전송 (`send()`)                |
-| `udsRecvMsg(sock, buffer, len)`                    | 데이터 수신 (`recv()`)                |
-| `udsRecvMsgTimeout(sock, buffer, len, timeout_ms)` | select 기반 타임아웃 수신             |
-| `uds_close(sock)`                                  | 소켓 종료 (`close()`)                 |
-
 ---
 
+## 🔧 빌드 방법
 
+### 1. 라이브러리 빌드
 
-## 예제
-
-### 서버
-
-```c
-int listen_fd = createUdsServerSocket("/tmp/my_socket");
-int client_fd = accept(listen_fd, NULL, NULL);
-
-char buf[128];
-int len = udsRecvMsg(client_fd, buf, sizeof(buf));
-buf[len] = '\0';
-printf("받은 메시지: %s\n", buf);
-
-uds_close(client_fd);
-uds_close(listen_fd);
-unlink("/tmp/my_socket");
+```bash
+make desktop       # libuds_desktop.so 생성
 ```
 
-### 클라이언트
-
-```c
-int sock = createUdsClientSocket("/tmp/my_socket");
-const char *msg = "Hello from client!";
-udsSendMsg(sock, msg, strlen(msg));
-uds_close(sock);
-```
-
-### 타임아웃 수신
-
-```c
-char buf[128];
-int len = udsRecvMsgTimeout(sock, buf, sizeof(buf), 1000);  // 1000ms
-if (len > 0) {
-    buf[len] = '\0';
-    printf("수신된 메시지: %s\n", buf);
-} else if (len == 0) {
-    printf("수신 타임아웃 발생\n");
-}
-```
-
----
+생성 결과 libuds_desktop.so 공유라이브러리 
 
 
 
-## 테스트 실행 (Google Test)
-
-단위 테스트는 `gtest-uds.cc`에 구현되어 있습니다.
-
-### 빌드 & 실행
+### 2. 구글테스트 빌드 및 실행
 
 ```bash
 make gtest
-./gtest-uds
+./uds-gtest
 ```
 
-테스트 항목:
+생성 결과 uds-gtest 실행 파일
 
-- 메시지 송수신
-- 수신 타임아웃
-- 클라이언트 종료 시 예외처리
-- 멀티 클라이언트 처리
+
 
 ---
 
+## 📌 Makefile 주요 타겟
 
-
-## 참고 사항
-
-- `/tmp` 디렉토리 등 소켓 파일 경로에 권한이 있어야 합니다.
-- 소켓 생성 전 `unlink(path)` 호출로 중복 파일 제거 필요합니다.
-
----
-
-
-
-## 라이선스
-
-> MIT License  
-> 자유롭게 사용, 수정, 배포 가능합니다.
-
----
+| 명령어         | 설명                                  |
+| -------------- | ------------------------------------- |
+| `make`         | 라이브러리 빌드 (`libuds_desktop.so`) |
+| `make gtest`   | GoogleTest 기반 테스트 빌드           |
+| `make clean`   | 빌드된 파일 정리                      |
+| `make install` | `/usr/lib` 및 `/usr/include`에 설치   |
 
 
 
-## 작성자
+------
 
-박철우 @ Acewave Tech
+## 📦 설치 파일 경로
+
+설치 시 다음 경로에 배치됩니다:
+
+- `/usr/lib/libuds_desktop.so`
+- `/usr/include/uds.h`
+- `/usr/include/uds-server.h`
+
+
+
+------
+
+## 🧪 의존성
+
+- POSIX Thread (`pthread`)
+- GoogleTest (테스트용)
+- queue 라이브러리 (`libqueue_desktop.so` 필요 시)
+
+
+
+------
+
+## 📄 라이선스
+
+누구나 필요하시다면 사용하세요.
+
+
+------
+
+## ✍️ 작성자
+
+- **박철우 (Cheolwoo Park)**
+- Embedded Systems / Signal Processing
+- GitHub: [PCW-Learning](https://github.com/PCW-Learning)
