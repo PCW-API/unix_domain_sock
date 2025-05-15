@@ -23,7 +23,7 @@ UDS_SERVER g_stUdsServer;
 
 constexpr const char* TEST_SOCKET_PATH = "/tmp/test_socket"; ///< 테스트용 UDS 소켓 경로
 constexpr int TEST_CLIENT_COUNT = 5;                          ///< 테스트 클라이언트 수
-constexpr int CONNECT_WAIT_MS = 100;                          ///< 클라이언트 연결 대기 시간(ms)
+constexpr int CONNECT_WAIT_MS = 80;                          ///< 클라이언트 연결 대기 시간(ms)
 constexpr int DATA_WAIT_MS = 300;                             ///< 데이터 수신 대기 시간(ms)
 
 /**
@@ -46,7 +46,7 @@ void startUdsServer() {
     }
     std::thread(&connectionManagerThread, &g_stUdsServer).detach();
     std::thread(&sendThread, &g_stUdsServer).detach();
-    std::thread(&recvThread, &g_stUdsServer).detach();    
+    std::thread(&recvThread, &g_stUdsServer).detach();
 }
 
 /**
@@ -177,7 +177,7 @@ TEST_F(UdsServerTest, ClientConnectDisconnectTest) {
     createClients(TEST_CLIENT_COUNT);
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
     ASSERT_EQ(g_stUdsServer.iClientCount, TEST_CLIENT_COUNT);
-    for (size_t i = 0; i < clientSockets.size(); ++i) {        
+    for (size_t i = 0; i < TEST_CLIENT_COUNT; ++i) {        
         close(clientSockets[i]);
         clientSockets[i] = -1;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -262,7 +262,6 @@ TEST_F(UdsServerTest, ClientUnexpectedTermination) {
 TEST_F(UdsServerTest, FragmentedSendTest) {
     int sock = createTestClientSocket();
     ASSERT_GT(sock, 0);
-    clientSockets.push_back(sock);
     const char* part1 = "Part1_";
     const char* part2 = "Part2_END";
     send(sock, part1, strlen(part1), 0);
@@ -322,7 +321,6 @@ TEST_F(UdsServerTest, SimultaneousClientSendTest) {
 TEST_F(UdsServerTest, SendQueueSaturationTest) {
     int sock = createTestClientSocket();
     ASSERT_GT(sock, 0);
-    clientSockets.push_back(sock);
 
     for (int i = 0; i < 1000; ++i) {
         std::string msg = "FloodData_" + std::to_string(i);
@@ -344,15 +342,15 @@ TEST_F(UdsServerTest, SendQueueSaturationTest) {
  */
 TEST_F(UdsServerTest, ClientReconnectTest) {
     int sock = createTestClientSocket();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     ASSERT_GT(sock, 0);
     close(sock);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     int sock2 = createTestClientSocket();
     ASSERT_GT(sock2, 0);
-    clientSockets.push_back(sock2);
     std::string msg = "ReconnectTest";
     send(sock2, msg.c_str(), msg.size(), 0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
     void* data = nullptr;
     int size = queuePop(&g_stUdsServer.pstClients[0].stRecvQueue, &data);
     ASSERT_GT(size, 0);
@@ -418,12 +416,6 @@ TEST_F(UdsServerTest, MultiClientHighVolumeSendTest) {
             int size = queuePop(&g_stUdsServer.pstClients[i].stRecvQueue, &data);
             if (size > 0 && data) {
                 std::string msg((char*)data, size);
-
-                // ✔ 메시지 정제 처리 추가
-                msg.erase(std::remove_if(msg.begin(), msg.end(), [](char c) {
-                    return c == '\n' || c == '\r' || c == '\0';
-                }), msg.end());
-
                 actualMessages.insert(msg);
                 free(data);
                 totalReceived++;
@@ -438,6 +430,20 @@ TEST_F(UdsServerTest, MultiClientHighVolumeSendTest) {
     for (auto& t : clientThreads) t.join();
 
     //검증
+    if (actualMessages.size() != expectedMessages.size()) {
+        std::cerr << "[Mismatch] actualMessages.size() = " << actualMessages.size()
+                << ", expectedMessages.size() = " << expectedMessages.size() << std::endl;
+
+        std::cerr << "[Expected Messages]:" << std::endl;
+        for (const auto& msg : expectedMessages) {
+            std::cerr << msg << std::endl;
+        }
+
+        std::cerr << "[Actual Messages]:" << std::endl;
+        for (const auto& msg : actualMessages) {
+            std::cerr << msg << std::endl;
+        }
+    }
     EXPECT_EQ(actualMessages.size(), expectedMessages.size());
     for (const auto& msg : expectedMessages) {
         EXPECT_TRUE(actualMessages.count(msg)) << "Missing: " << msg <<", size is "<<msg.size();
