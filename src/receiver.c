@@ -24,9 +24,9 @@ void* recvThread(void* arg)
     while (1) {
         int iPollCount = 0;
         pthread_mutex_lock(&pstUdsServer->mutex);
-        for (int i = 0; i < iMaxClients; ++i) {            
-            if (pstUdsServer->pstClients[i].iActive) {
-                stPollFds[iPollCount].fd = pstUdsServer->pstClients[i].iSock;
+        for (int iPollFdIndex = 0; iPollFdIndex < iMaxClients; iPollFdIndex++) {
+            if (pstUdsServer->pstClients[iPollFdIndex].iActive) {                
+                stPollFds[iPollCount].fd = pstUdsServer->pstClients[iPollFdIndex].iSock;
                 stPollFds[iPollCount].events = POLLIN;
                 iPollCount++;
             }            
@@ -37,38 +37,43 @@ void* recvThread(void* arg)
         if (iReady <= 0)
             continue;
 
-        for (int i = 0; i < iPollCount; ++i) {
-            if (stPollFds[i].revents & POLLIN) {
-                int iClientFd = stPollFds[i].fd;
+        for (int iPollFdIndex = 0; iPollFdIndex < iPollCount; iPollFdIndex++) {
+            if (stPollFds[iPollFdIndex].revents & POLLIN) {
+                int iClientFd = stPollFds[iPollFdIndex].fd;
                 char chBuffer[1024];
                 int iRecvSize = udsRecvMsg(iClientFd, chBuffer, sizeof(chBuffer) - 1);
-                if (iRecvSize <= 0) {
+                if (iRecvSize <= 0) {                    
                     close(iClientFd);
                     pthread_mutex_lock(&pstUdsServer->mutex);
-                    for (int j = 0; j < pstUdsServer->iMaxClients; ++j) {
-                        if (pstUdsServer->pstClients[j].iSock == iClientFd) {
-                            pstUdsServer->pstClients[j].iActive = 0;
-                            queueDestroy(&(pstUdsServer->pstClients[i].stSendQueue));
-                            queueDestroy(&(pstUdsServer->pstClients[i].stRecvQueue));
-                            pstUdsServer->pstClients[j].iSock = -1;
-                            pstUdsServer->iClientCount--;                            
-                        }
-                        break;
+                    for (int iClientFdIndex = 0; iClientFdIndex < pstUdsServer->iMaxClients; iClientFdIndex++) {
+                        if (pstUdsServer->pstClients[iClientFdIndex].iSock == iClientFd) {
+                            pstUdsServer->pstClients[iClientFdIndex].iActive = 0;
+                            queueDestroy(&(pstUdsServer->pstClients[iClientFdIndex].stSendQueue));
+                            queueDestroy(&(pstUdsServer->pstClients[iClientFdIndex].stRecvQueue));
+                            pstUdsServer->pstClients[iClientFdIndex].iSock = -1;
+                            pstUdsServer->iClientCount--;
+                            break;
+                        }                        
                     }
                     pthread_mutex_unlock(&pstUdsServer->mutex);
                 } else {                    
-                    chBuffer[iRecvSize] = '\0';                    
-                    pthread_mutex_lock(&pstUdsServer->mutex);
-                    // fprintf(stderr,"### %s():%d Msg:%s [%d %d]###\n", __func__,__LINE__, chBuffer, pstUdsServer->pstClients[i].iSock, iClientFd);
-                    for (int j = 0; j < pstUdsServer->iMaxClients; ++j) {
-                        if (pstUdsServer->pstClients[i].iSock == iClientFd) {
-                            if(queuePush(&(pstUdsServer->pstClients[i].stRecvQueue), strdup(chBuffer), iRecvSize) == 0){
-                                fprintf(stderr,"### FAIL %s():%d Msg:%s ###\n", __func__,__LINE__, chBuffer);
+                    chBuffer[iRecvSize] = '\0';
+                    void* pvData = malloc(iRecvSize);
+                    if (pvData == NULL) {
+                        fprintf(stderr, "Memory allocation failed\n");
+                    } else {
+                        memcpy(pvData, chBuffer, iRecvSize);
+                        pthread_mutex_lock(&pstUdsServer->mutex);                    
+                        for (int iClientFdIndex = 0; iClientFdIndex < pstUdsServer->iMaxClients; iClientFdIndex++) {
+                            if (pstUdsServer->pstClients[iClientFdIndex].iSock == iClientFd) {
+                                if(queuePush(&(pstUdsServer->pstClients[iClientFdIndex].stRecvQueue), pvData, iRecvSize) == 0){
+                                    fprintf(stderr,"### FAIL %s():%d Msg:%s ###\n", __func__,__LINE__, chBuffer);
+                                    break;
+                                }
                             }
-                            break;
                         }
-                    }
-                    pthread_mutex_unlock(&pstUdsServer->mutex);
+                        pthread_mutex_unlock(&pstUdsServer->mutex);
+                    }                    
                 }
             }
         }
