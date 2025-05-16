@@ -22,7 +22,7 @@ void* connectionManagerThread(void* arg)
             pthread_mutex_lock(&pstUdsServer->mutex);
             for (int i = 0; i < iMaxClients; ++i) {                
                 if (!pstUdsServer->pstClients[i].iActive) {
-                    pstUdsServer->pstClients[i].iSock = iClientFd;
+                    pstUdsServer->pstClients[i].iSock = iClientFd;                    
                     queueInit(&(pstUdsServer->pstClients[i].stRecvQueue), 10);
                     queueInit(&(pstUdsServer->pstClients[i].stSendQueue), 10);
                     pstUdsServer->pstClients[i].iActive = 1;

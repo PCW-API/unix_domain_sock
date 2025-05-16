@@ -21,10 +21,10 @@
 
 UDS_SERVER g_stUdsServer;
 
-constexpr const char* TEST_SOCKET_PATH = "/tmp/test_socket"; ///< 테스트용 UDS 소켓 경로
-constexpr int TEST_CLIENT_COUNT = 5;                          ///< 테스트 클라이언트 수
-constexpr int CONNECT_WAIT_MS = 80;                          ///< 클라이언트 연결 대기 시간(ms)
-constexpr int DATA_WAIT_MS = 300;                             ///< 데이터 수신 대기 시간(ms)
+#define TEST_SOCKET_PATH    "/tmp/test_socket"    ///< 테스트용 UDS 소켓 경로
+#define TEST_CLIENT_COUNT   5                    ///< 테스트 클라이언트 수
+#define CONNECT_WAIT_MS     80             ///< 클라이언트 연결 대기 시간(ms)
+#define DATA_WAIT_MS        300               ///< 데이터 수신 대기 시간(ms)
 
 /**
  * @brief 테스트용 UDS 서버 초기화 함수
@@ -32,18 +32,8 @@ constexpr int DATA_WAIT_MS = 300;                             ///< 데이터 수
  * 서버 소켓을 생성하고, 클라이언트 배열 및 뮤텍스를 초기화합니다.
  * 연결 관리, 송수신 스레드를 시작합니다.
  */
-void startUdsServer() {    
-    g_stUdsServer.iServerSock = createUdsServerSocket(TEST_SOCKET_PATH, TEST_CLIENT_COUNT);
-    pthread_mutex_init(&g_stUdsServer.mutex, NULL);
-    g_stUdsServer.iMaxClients = TEST_CLIENT_COUNT;
-    g_stUdsServer.iRunning = 0;
-    g_stUdsServer.iClientCount = 0;
-    g_stUdsServer.pstClients = (CLIENT *)malloc(sizeof(CLIENT) * TEST_CLIENT_COUNT);
-    for (int i = 0; i < g_stUdsServer.iMaxClients; ++i) {
-        g_stUdsServer.pstClients[i].iSock = -1;
-        g_stUdsServer.pstClients[i].iActive = 0;
-        g_stUdsServer.pstClients[i].iId = -1;
-    }
+void startUds() {    
+    startUdsServer(&g_stUdsServer, TEST_SOCKET_PATH, TEST_CLIENT_COUNT);
     std::thread(&connectionManagerThread, &g_stUdsServer).detach();
     std::thread(&sendThread, &g_stUdsServer).detach();
     std::thread(&recvThread, &g_stUdsServer).detach();
@@ -54,13 +44,8 @@ void startUdsServer() {
  *
  * 서버 실행을 중단하고 소켓을 종료합니다.
  */
-void stopUdsServer() {
-    g_stUdsServer.iRunning = 0;
-    g_stUdsServer.iClientCount = 0;
-    // g_stUdsServer.pstClients
-    if (g_stUdsServer.iServerSock) {
-        udsClose(g_stUdsServer.iServerSock);
-    }
+void stopUds() {
+    stopUdsServer(&g_stUdsServer);    
 }
 
 /**
@@ -94,7 +79,7 @@ protected:
     std::atomic<bool> running{true};
 
     void SetUp() override {
-        startUdsServer();
+        startUds();
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
 
@@ -110,7 +95,7 @@ protected:
         for (int sock : clientSockets) 
             if (sock > 0) 
                 close(sock);
-        stopUdsServer();
+        stopUds();
     }
 
     void createClients(int count) {

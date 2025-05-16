@@ -7,6 +7,7 @@ extern "C" {
 
 #include <pthread.h>
 #include "queue.h"
+#include "uds.h"
 
 #define UDS_MAX_DATA_SIZE   1024    ///< 전송 가능한 최대 데이터 크기
 #define QUEUE_SIZE          64      ///< 큐 버퍼 크기
@@ -74,6 +75,10 @@ void* recvThread(void* arg);
  * @return NULL
  */
 void* sendThread(void* arg);
+
+
+void startUdsServer(UDS_SERVER *pstUdsServer, char* pchUdsPath, int iUdsClientCount);
+void stopUdsServer(UDS_SERVER *pstUdsServer);
 
 #ifdef __cplusplus
 }
