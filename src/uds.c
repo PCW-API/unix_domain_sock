@@ -67,9 +67,10 @@ int createUdsClientSocket(const char *pchSocketPath) {
     if (connect(iSock, (struct sockaddr *)&address, sizeof(address)) == -1) {
         perror("Connection failed");
         close(iSock);
-        exit(EXIT_FAILURE);
+        return 0;
+    }else{
+        return iSock;
     }
-    return iSock;
 }
 
 void handleUdsClientDisconnection(int iClientSockFd) 
